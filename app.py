@@ -34,7 +34,6 @@ def suggest():
         response.raise_for_status()
 
         places = response.json().get("results", [])
-
         results = []
 
         for place in places:
@@ -49,6 +48,7 @@ def suggest():
         return jsonify(results)
 
     except requests.RequestException:
+        app.logger.exception("Open-Meteo location search failed")
         return jsonify({"error": "Location search failed"}), 502
 
 
@@ -73,7 +73,7 @@ def weather():
                 ),
                 "timezone": "auto"
             },
-            timeout=15
+            timeout=30
         )
         response.raise_for_status()
 
@@ -87,7 +87,10 @@ def weather():
         })
 
     except requests.RequestException:
-        return jsonify({"error": "Could not load weather data"}), 502
+        app.logger.exception("Open-Meteo weather request failed")
+        return jsonify({
+            "error": "Could not load weather data. Please try again."
+        }), 502
 
 
 if __name__ == "__main__":
