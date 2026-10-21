@@ -1,0 +1,502 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyCast | Weather App</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 35px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #17365c;
+            background: linear-gradient(160deg, #69c9f5, #b5e7ff, #f1faff);
+            overflow-x: hidden;
+        }
+
+        .sun {
+            position: fixed;
+            top: 55px;
+            right: 12%;
+            width: 90px;
+            height: 90px;
+            background: #fff4ad;
+            border-radius: 50%;
+            box-shadow: 0 0 65px #ffe783;
+            animation: glow 3s infinite alternate;
+        }
+
+        .cloud {
+            position: fixed;
+            width: 145px;
+            height: 40px;
+            border-radius: 40px;
+            background: rgba(255, 255, 255, 0.85);
+            animation: float 7s ease-in-out infinite alternate;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: "";
+            position: absolute;
+            background: inherit;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 60px;
+            height: 60px;
+            left: 20px;
+            top: -28px;
+        }
+
+        .cloud::after {
+            width: 75px;
+            height: 75px;
+            right: 18px;
+            top: -38px;
+        }
+
+        .cloud-one {
+            top: 23%;
+            left: 5%;
+        }
+
+        .cloud-two {
+            bottom: 20%;
+            right: 5%;
+            animation-delay: -3s;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 470px;
+            padding: 32px 26px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid white;
+            border-radius: 26px;
+            box-shadow: 0 22px 60px rgba(37, 100, 145, 0.18);
+            backdrop-filter: blur(12px);
+        }
+
+        .icon {
+            font-size: 55px;
+        }
+
+        h1 {
+            margin: 5px 0;
+            font-size: 35px;
+            color: #164777;
+        }
+
+        .subtitle {
+            color: #64839e;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #d4e5f2;
+            border-radius: 13px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #238bda;
+            box-shadow: 0 0 0 3px #238bda22;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .search-button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 14px;
+            border: none;
+            border-radius: 13px;
+            background: linear-gradient(135deg, #238bda, #5266d8);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .search-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .suggestions {
+            display: none;
+            position: absolute;
+            top: calc(100% + 5px);
+            width: 100%;
+            max-height: 220px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px #234c7025;
+            z-index: 5;
+            text-align: left;
+        }
+
+        .suggestion {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-bottom: 1px solid #edf3f8;
+            background: white;
+            text-align: left;
+            color: #234c70;
+        }
+
+        .suggestion:hover {
+            background: #edf8ff;
+        }
+
+        .status {
+            padding: 12px;
+            font-size: 13px;
+            color: #64839e;
+        }
+
+        .weather {
+            margin-top: 25px;
+            padding: 22px 16px;
+            background: linear-gradient(145deg, #e5f5ff, #fff);
+            border: 1px solid #d7edfc;
+            border-radius: 20px;
+        }
+
+        .weather h2 {
+            margin: 0;
+            font-size: 20px;
+            overflow-wrap: anywhere;
+        }
+
+        .temperature {
+            margin: 12px 0 2px;
+            font-size: 62px;
+            font-weight: bold;
+            color: #1768a7;
+        }
+
+        .temp-label {
+            color: #64839e;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .detail {
+            padding: 14px 6px;
+            border-radius: 13px;
+            background: white;
+            border: 1px solid #e4f0f8;
+            color: #456680;
+            font-size: 13px;
+        }
+
+        .detail span {
+            display: block;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .detail strong {
+            display: block;
+            margin-top: 5px;
+            color: #214d73;
+            font-size: 17px;
+        }
+
+        .error {
+            margin-top: 16px;
+            color: #bd3c3c;
+            font-size: 14px;
+        }
+
+        footer {
+            margin-top: 23px;
+            font-size: 12px;
+            color: #7890a5;
+        }
+
+        @keyframes float {
+            from { transform: translateY(0); }
+            to { transform: translateY(15px); }
+        }
+
+        @keyframes glow {
+            from { transform: scale(1); }
+            to { transform: scale(1.07); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 27px 19px;
+            }
+
+            .sun {
+                width: 65px;
+                height: 65px;
+                top: 20px;
+            }
+
+            .cloud-one {
+                left: -80px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sun"></div>
+    <div class="cloud cloud-one"></div>
+    <div class="cloud cloud-two"></div>
+
+    <main class="container">
+        <div class="icon">🌤️</div>
+        <h1>SkyCast</h1>
+        <p class="subtitle">
+            A little sunshine in your day.<br>
+            Discover the weather around the world.
+        </p>
+
+        <form id="weatherForm">
+            <label for="cityInput">Where do you want to go?</label>
+
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="cityInput"
+                    placeholder="Enter city and country"
+                    autocomplete="off"
+                    required
+                >
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+
+            <button class="search-button" type="submit">
+                ☁️ Get Weather
+            </button>
+        </form>
+
+        <div id="result"></div>
+
+        <footer>Weather data powered by Open-Meteo ☁️</footer>
+    </main>
+
+    <script>
+        const cityInput = document.getElementById("cityInput");
+        const suggestions = document.getElementById("suggestions");
+        const form = document.getElementById("weatherForm");
+        const result = document.getElementById("result");
+
+        let selectedPlace = null;
+        let searchTimer;
+        let requestNumber = 0;
+
+        function closeSuggestions() {
+            suggestions.innerHTML = "";
+            suggestions.style.display = "none";
+        }
+
+        function showStatus(message) {
+            suggestions.innerHTML = "";
+
+            const item = document.createElement("div");
+            item.className = "status";
+            item.textContent = message;
+
+            suggestions.appendChild(item);
+            suggestions.style.display = "block";
+        }
+
+        cityInput.addEventListener("input", function () {
+            clearTimeout(searchTimer);
+            requestNumber++;
+            selectedPlace = null;
+            result.innerHTML = "";
+
+            const query = cityInput.value.trim();
+            const parts = query.split(",");
+            const city = parts[0].trim();
+            const country = parts.slice(1).join(",").trim();
+            const currentRequest = requestNumber;
+
+            closeSuggestions();
+
+            if (city.length < 2) return;
+
+            searchTimer = setTimeout(async function () {
+                showStatus("Finding places... ☁️");
+
+                try {
+                    const response = await fetch(
+                        "/suggest?q=" + encodeURIComponent(city)
+                    );
+
+                    if (!response.ok) throw new Error();
+
+                    let places = await response.json();
+
+                    if (currentRequest !== requestNumber) return;
+
+                    if (country) {
+                        places = places.filter(function (place) {
+                            return (place.country || "")
+                                .toLowerCase()
+                                .includes(country.toLowerCase()) ||
+                                (place.region || "")
+                                .toLowerCase()
+                                .includes(country.toLowerCase());
+                        });
+                    }
+
+                    closeSuggestions();
+
+                    if (places.length === 0) {
+                        showStatus("No matching places found. Try another search.");
+                        return;
+                    }
+
+                    places.forEach(function (place) {
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "suggestion";
+
+                        button.textContent = "📍 " + place.name +
+                            (place.region ? ", " + place.region : "") +
+                            (place.country ? ", " + place.country : "");
+
+                        button.addEventListener("click", function () {
+                            selectedPlace = place;
+                            cityInput.value = place.name +
+                                (place.country ? ", " + place.country : "");
+                            closeSuggestions();
+                        });
+
+                        suggestions.appendChild(button);
+                    });
+
+                    suggestions.style.display = "block";
+
+                } catch (error) {
+                    if (currentRequest === requestNumber) {
+                        showStatus("Search failed. Check your internet connection.");
+                    }
+                }
+            }, 300);
+        });
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            closeSuggestions();
+
+            if (!selectedPlace) {
+                result.innerHTML =
+                    '<p class="error">Please choose a location from the suggestions.</p>';
+                cityInput.focus();
+                return;
+            }
+
+            result.innerHTML =
+                '<p class="status">Loading your weather... ☀️</p>';
+
+            try {
+                const response = await fetch(
+                    "/weather?latitude=" + selectedPlace.latitude +
+                    "&longitude=" + selectedPlace.longitude
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Weather unavailable");
+                }
+
+                result.innerHTML = "";
+
+                const card = document.createElement("section");
+                card.className = "weather";
+
+                const heading = document.createElement("h2");
+                heading.textContent = selectedPlace.name +
+                    (selectedPlace.country ? ", " + selectedPlace.country : "");
+
+                const temperature = document.createElement("div");
+                temperature.className = "temperature";
+                temperature.textContent = data.temperature + "°";
+
+                const label = document.createElement("div");
+                label.className = "temp-label";
+                label.textContent = "Current temperature · Celsius";
+
+                const details = document.createElement("div");
+                details.className = "details";
+
+                details.innerHTML =
+                    '<div class="detail"><span>💧</span>Humidity<strong>' +
+                    data.humidity + '%</strong></div>' +
+                    '<div class="detail"><span>💨</span>Wind speed<strong>' +
+                    data.wind + ' km/h</strong></div>';
+
+                card.append(heading, temperature, label, details);
+                result.appendChild(card);
+
+            } catch (error) {
+                result.innerHTML = "";
+
+                const message = document.createElement("p");
+                message.className = "error";
+                message.textContent = error.message ||
+                    "Could not load weather. Please try again.";
+
+                result.appendChild(message);
+            }
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!event.target.closest(".search-box")) {
+                closeSuggestions();
+            }
+        });
+    </script>
+</body>
+</html>
