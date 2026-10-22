@@ -49,7 +49,9 @@ def suggest():
 
     except requests.RequestException:
         app.logger.exception("Open-Meteo location search failed")
-        return jsonify({"error": "Location search failed"}), 502
+        return jsonify({
+            "error": "Location search failed"
+        }), 502
 
 
 @app.route("/weather")
@@ -58,7 +60,9 @@ def weather():
     longitude = request.args.get("longitude")
 
     if not latitude or not longitude:
-        return jsonify({"error": "Choose a location first"}), 400
+        return jsonify({
+            "error": "Choose a location first"
+        }), 400
 
     try:
         response = requests.get(
@@ -69,8 +73,16 @@ def weather():
                 "current": (
                     "temperature_2m,"
                     "relative_humidity_2m,"
-                    "wind_speed_10m"
+                    "wind_speed_10m,"
+                    "weather_code"
                 ),
+                "daily": (
+                    "weather_code,"
+                    "temperature_2m_max,"
+                    "temperature_2m_min,"
+                    "precipitation_probability_max"
+                ),
+                "forecast_days": 5,
                 "timezone": "auto"
             },
             timeout=30
@@ -79,11 +91,29 @@ def weather():
 
         data = response.json()
         current = data.get("current", {})
+        daily = data.get("daily", {})
+
+        forecast = []
+
+        dates = daily.get("time", [])
+
+        for i in range(len(dates)):
+            forecast.append({
+                "date": dates[i],
+                "weather_code": daily["weather_code"][i],
+                "max_temp": daily["temperature_2m_max"][i],
+                "min_temp": daily["temperature_2m_min"][i],
+                "rain_chance": daily[
+                    "precipitation_probability_max"
+                ][i]
+            })
 
         return jsonify({
             "temperature": current.get("temperature_2m"),
             "humidity": current.get("relative_humidity_2m"),
-            "wind": current.get("wind_speed_10m")
+            "wind": current.get("wind_speed_10m"),
+            "weather_code": current.get("weather_code"),
+            "forecast": forecast
         })
 
     except requests.RequestException:
